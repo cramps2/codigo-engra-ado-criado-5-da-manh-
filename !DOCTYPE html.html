@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Luna - Relacionamento Interativo</title>
+
+<style>
+
+body {
+    margin: 0;
+    font-family: "Arial", sans-serif;
+    background: #0f172a;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+#game {
+    width: 800px;
+    background: #020617;
+    border: 3px solid #38bdf8;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0 25px #38bdf8;
+}
+
+/* Fundo */
+#scene {
+    height: 350px;
+    background: url("https://i.imgur.com/BF6xB2D.png");
+    background-size: cover;
+    position: relative;
+}
+
+/* Personagem */
+#luna {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    height: 320px;
+    image-rendering: pixelated;
+}
+
+/* Caixa de diálogo */
+#dialogue {
+    padding: 15px;
+    background: #020617;
+    border-top: 2px solid #38bdf8;
+}
+
+#name {
+    color: #38bdf8;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+#text {
+    min-height: 60px;
+}
+
+/* Botões */
+#choices {
+    margin-top: 15px;
+}
+
+.choice {
+    background: #020617;
+    border: 2px solid #38bdf8;
+    color: white;
+    padding: 8px;
+    width: 100%;
+    margin: 5px 0;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: 0.2s;
+}
+
+.choice:hover {
+    background: #38bdf8;
+    color: black;
+}
+
+/* Status */
+#status {
+    background: #020617;
+    padding: 8px;
+    text-align: center;
+    font-size: 14px;
+    border-top: 1px solid #38bdf8;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+    <div id="scene">
+        <img id="luna" src="https://i.imgur.com/JuQ9NqH.png">
+    </div>
+
+    <div id="dialogue">
+        <div id="name">Luna</div>
+        <div id="text"></div>
+
+        <div id="choices"></div>
+    </div>
+
+    <div id="status"></div>
+
+</div>
+
+<script>
+
+// Sistema de relacionamento
+let affinity = 0;
+let level = 0;
+
+// Níveis
+const levels = [
+    "Estranhos",
+    "Conhecidos",
+    "Amigos",
+    "Próximos",
+    "Ficantes",
+    "Namorados"
+];
+
+// Diálogos
+const scenes = [
+
+{
+text: "Oi... você é novo aqui, né? Eu não falo muito com estranhos...",
+choices: [
+{ text: "Tudo bem, eu só queria conversar.", points: 2 },
+{ text: "Relaxa, nem queria falar mesmo.", points: -2 },
+{ text: "Posso sentar com você?", points: 1 }
+]
+},
+
+{
+text: "Às vezes eu acho que ninguém se importa comigo...",
+choices: [
+{ text: "Eu me importo com você.", points: 3 },
+{ text: "Você só tá exagerando.", points: -3 },
+{ text: "Quer me contar mais?", points: 2 }
+]
+},
+
+{
+text: "Meus pais sempre diziam que eu era um erro...",
+choices: [
+{ text: "Eles estavam errados.", points: 3 },
+{ text: "Isso deve ter sido difícil...", points: 2 },
+{ text: "Já passou, esquece.", points: -2 }
+]
+},
+
+{
+text: "Com você eu me sinto um pouco mais segura...",
+choices: [
+{ text: "Eu vou ficar aqui com você.", points: 3 },
+{ text: "Gosto de ouvir você.", points: 2 },
+{ text: "Legal.", points: 0 }
+]
+},
+
+{
+text: "Eu... acho que tô começando a gostar de você.",
+choices: [
+{ text: "Eu também gosto de você.", points: 3 },
+{ text: "Vamos devagar.", points: 1 },
+{ text: "Não sei...", points: -2 }
+]
+}
+
+];
+
+let currentScene = 0;
+
+// Elementos
+const textBox = document.getElementById("text");
+const choicesBox = document.getElementById("choices");
+const statusBox = document.getElementById("status");
+
+// Atualiza status
+function updateStatus() {
+    level = Math.min(Math.floor(affinity / 5), 5);
+
+    statusBox.innerHTML = `
+    Afinidade: ${affinity} ❤️ |
+    Relação: ${levels[level]}
+    `;
+}
+
+// Mostra cena
+function showScene() {
+
+    if(currentScene >= scenes.length){
+        endGame();
+        return;
+    }
+
+    const scene = scenes[currentScene];
+
+    textBox.innerText = scene.text;
+    choicesBox.innerHTML = "";
+
+    scene.choices.forEach(choice => {
+
+        const btn = document.createElement("button");
+        btn.className = "choice";
+        btn.innerText = choice.text;
+
+        btn.onclick = () => {
+            affinity += choice.points;
+            currentScene++;
+            updateStatus();
+            showScene();
+        };
+
+        choicesBox.appendChild(btn);
+    });
+
+}
+
+// Final
+function endGame(){
+
+    let ending = "";
+
+    if(level <= 1){
+        ending = "Luna ainda tem dificuldade em confiar... talvez precise de mais tempo.";
+    }
+    else if(level <= 3){
+        ending = "Você se tornou alguém importante pra Luna.";
+    }
+    else{
+        ending = "Luna finalmente encontrou alguém em quem pode confiar e amar.";
+    }
+
+    textBox.innerText = ending;
+    choicesBox.innerHTML = "<button class='choice' onclick='location.reload()'>Recomeçar</button>";
+}
+
+// Iniciar
+updateStatus();
+showScene();
+
+</script>
+
+</body>
+</html>
