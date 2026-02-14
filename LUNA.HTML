@@ -1,0 +1,229 @@
+<script>
+
+// STATUS
+let affinity = 5;
+let boldness = 2;
+let mental = 6;
+let chaos = 0;
+let jealousy = 0;
+
+let chapter = 1;
+let scene = 0;
+
+// Personagens
+const chars = {
+ luna: "Luna",
+ victor: "Victor",
+ leo: "Leo",
+ maya: "Maya"
+};
+
+// Banco de eventos
+const events = {
+
+romance: [
+"Ela segura sua mão em silêncio.",
+"Luna sorri tímida pra você.",
+"Ela encosta a cabeça no seu ombro."
+],
+
+drama: [
+"Victor manda mensagem provocando.",
+"Leo fica estranho com você.",
+"Luna chora escondida."
+],
+
+conflict: [
+"Uma discussão explode.",
+"Ela se fecha por dias.",
+"Vocês brigam feio."
+],
+
+peace: [
+"Vocês fazem as pazes.",
+"Ela agradece por não desistir.",
+"Vocês riem juntos."
+],
+
+danger: [
+"Um segredo vem à tona.",
+"Uma mentira aparece.",
+"Alguém trai a confiança."
+]
+
+};
+
+// Gerador de capítulos
+function generateScene(){
+
+let mood = "";
+
+if(chaos > 8) mood = "danger";
+else if(jealousy > 6) mood = "conflict";
+else if(affinity > 15) mood = "romance";
+else if(mental < 3) mood = "drama";
+else mood = "peace";
+
+let text = random(events[mood]);
+
+return {
+ text: text,
+ choices: [
+
+ {
+ text:"Apoiar Luna",
+ a:2, m:2, c:-1, j:-1
+ },
+
+ {
+ text:"Confrontar",
+ a:-1, m:-1, c:2, j:2
+ },
+
+ {
+ text:"Ignorar",
+ a:-2, m:-2, c:1, j:0
+ },
+
+ {
+ text:"Flertar",
+ a:1, b:2, c:0, j:1
+ }
+
+ ]
+};
+
+}
+
+// Utils
+function random(arr){
+ return arr[Math.floor(Math.random()*arr.length)];
+}
+
+// UI
+const textBox = document.getElementById("text");
+const choicesBox = document.getElementById("choices");
+const statusBox = document.getElementById("status");
+
+// HUD
+function updateStatus(){
+
+statusBox.innerHTML = `
+❤️ ${affinity}
+🔥 ${boldness}
+🧠 ${mental}
+⚡ Caos ${chaos}
+😡 Ciúmes ${jealousy}
+📖 Cap ${chapter}
+`;
+
+}
+
+// Mostrar
+function showScene(){
+
+if(chapter > 120){
+ endGame();
+ return;
+}
+
+let sc = generateScene();
+
+textBox.innerText = `Capítulo ${chapter}\n\n${sc.text}`;
+
+choicesBox.innerHTML = "";
+
+sc.choices.forEach(c=>{
+
+let btn = document.createElement("button");
+btn.className="choice";
+btn.innerText=c.text;
+
+btn.onclick=()=>{
+
+affinity+=c.a||0;
+boldness+=c.b||0;
+mental+=c.m||0;
+chaos+=c.c||0;
+jealousy+=c.j||0;
+
+chapter++;
+
+limit();
+
+updateStatus();
+showScene();
+
+};
+
+choicesBox.appendChild(btn);
+
+});
+
+}
+
+// Limites
+function limit(){
+
+affinity = Math.max(0,affinity);
+mental = Math.max(0,mental);
+chaos = Math.max(0,chaos);
+jealousy = Math.max(0,jealousy);
+
+}
+
+// Finais
+function endGame(){
+
+let ending="";
+
+if(mental<=0){
+
+ending="Luna se perde na própria dor. Você não conseguiu salvá-la.";
+
+}
+
+else if(affinity<5){
+
+ending="Vocês se afastam para sempre.";
+
+}
+
+else if(chaos>15){
+
+ending="O relacionamento vira destruição.";
+
+}
+
+else if(jealousy>12){
+
+ending="Ciúmes destrói tudo.";
+
+}
+
+else if(affinity>25 && mental>10){
+
+ending="Vocês vencem tudo juntos.";
+
+}
+
+else{
+
+ending="Uma história inacabada.";
+}
+
+textBox.innerText = ending;
+
+choicesBox.innerHTML=`
+<button class="choice" onclick="location.reload()">
+Recomeçar
+</button>
+`;
+
+}
+
+// Start
+updateStatus();
+showScene();
+
+</script>
