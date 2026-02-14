@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Luna - Visual Novel</title>
+
+<style>
+
+body{
+    margin:0;
+    background:#020617;
+    font-family:Arial, Helvetica, sans-serif;
+    color:white;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+#game{
+    width:900px;
+    max-width:95vw;
+    background:#020617;
+    border:3px solid #38bdf8;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:0 0 30px #38bdf8;
+}
+
+#scene{
+    height:350px;
+    background:linear-gradient(to bottom,#020617,#020617);
+    position:relative;
+    display:flex;
+    justify-content:center;
+    align-items:flex-end;
+}
+
+#luna{
+    height:300px;
+    image-rendering:pixelated;
+}
+
+#dialogue{
+    padding:15px;
+    border-top:2px solid #38bdf8;
+}
+
+#name{
+    color:#38bdf8;
+    font-weight:bold;
+    margin-bottom:5px;
+}
+
+#text{
+    min-height:70px;
+    line-height:1.4;
+}
+
+#choices{
+    margin-top:10px;
+}
+
+.choice{
+    width:100%;
+    background:#020617;
+    border:2px solid #38bdf8;
+    color:white;
+    padding:8px;
+    margin:4px 0;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.choice:hover{
+    background:#38bdf8;
+    color:black;
+}
+
+#status{
+    text-align:center;
+    font-size:13px;
+    padding:6px;
+    border-top:1px solid #38bdf8;
+}
+
+#menu{
+    position:absolute;
+    top:10px;
+    right:10px;
+}
+
+#menu button{
+    background:#020617;
+    border:1px solid #38bdf8;
+    color:white;
+    padding:5px 8px;
+    margin-left:5px;
+    cursor:pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="game">
+
+<div id="scene">
+
+<div id="menu">
+<button onclick="saveGame()">Salvar</button>
+<button onclick="loadGame()">Carregar</button>
+</div>
+
+<img id="luna" src="https://i.imgur.com/JuQ9NqH.png">
+</div>
+
+<div id="dialogue">
+<div id="name">Luna</div>
+<div id="text"></div>
+<div id="choices"></div>
+</div>
+
+<div id="status"></div>
+
+</div>
+
+<script>
+
+// ========================
+// STATUS
+// ========================
+
+let affinity = 5;   // amor
+let boldness = 2;   // ousadia
+let mental = 6;     // emocional
+let chaos = 0;      // drama
+let jealousy = 0;   // ciúmes
+
+let chapter = 1;
+
+// ========================
+// PERSONAGENS
+// ========================
+
+const characters = {
+    luna: "Luna",
+    victor: "Victor (Ex)",
+    leo: "Leo (Amigo)",
+    maya: "Maya (Amiga)"
+};
+
+// ========================
+// EVENTOS
+// ========================
+
+const events = {
+
+romance: [
+"Luna segura sua mão timidamente.",
+"Ela encosta no seu ombro sorrindo.",
+"Luna diz que se sente segura com você.",
+"Ela manda uma mensagem dizendo que sente sua falta."
+],
+
+drama: [
+"Luna chora no banheiro da faculdade.",
+"Ela diz que se sente inútil.",
+"Luna lembra das palavras dos pais.",
+"Ela se fecha por dias."
+],
+
+conflict: [
+"Victor aparece criando confusão.",
+"Leo discute com você.",
+"Uma briga explode entre vocês.",
+"Ciúmes vira discussão."
+],
+
+peace: [
+"Vocês tomam café juntos.",
+"Luna ri alto com você.",
+"Passeiam no parque de mãos dadas.",
+"Assistiram um filme abraçados."
+],
+
+danger: [
+"Victor ameaça contar segredos.",
+"Luna desaparece por dias.",
+"Um boato se espalha.",
+"Uma traição é suspeitada."
+],
+
+intimate: [
+"Luna cora e se aproxima mais.",
+"Ela ri: 'você é muito direto kkk'.",
+"Ela sussurra no seu ouvido.",
+"O clima fica intenso entre vocês."
+]
+
+};
+
+// ========================
+// UTIL
+// ========================
+
+function random(arr){
+    return arr[Math.floor(Math.random()*arr.length)];
+}
+
+// ========================
+// GERADOR DE CENA
+// ========================
+
+function generateScene(){
+
+    let mood = "peace";
+
+    if(mental <= 2) mood = "drama";
+    else if(chaos > 8) mood = "danger";
+    else if(jealousy > 6) mood = "conflict";
+    else if(affinity > 25) mood = "romance";
+
+    let baseText = random(events[mood]);
+
+    if(boldness > 8 && affinity > 15){
+        baseText += "\n\n" + random(events.intimate);
+    }
+
+    return {
+        text: baseText,
+        choices: [
+
+            {text:"Apoiar Luna", a:2, b:0, m:2, c:-1, j:-1},
+
+            {text:"Confrontar", a:-1, b:0, m:-1, c:2, j:2},
+
+            {text:"Ignorar", a:-2, b:0, m:-2, c:1, j:0},
+
+            {text:"Flertar/Ousar", a:1, b:2, m:0, c:0, j:1},
+
+            {text:"Convidar pra sair", a:2, b:1, m:1, c:0, j:0}
+
+        ]
+    };
+}
+
+// ========================
+// ELEMENTOS
+// ========================
+
+const textBox = document.getElementById("text");
+const choicesBox = document.getElementById("choices");
+const statusBox = document.getElementById("status");
+
+// ========================
+// HUD
+// ========================
+
+function updateStatus(){
+
+statusBox.innerHTML = `
+❤️ Amor: ${affinity}
+🔥 Ousadia: ${boldness}
+🧠 Emoção: ${mental}
+⚡ Caos: ${chaos}
+😡 Ciúmes: ${jealousy}
+📖 Capítulo: ${chapter}/120
+`;
+
+}
+
+// ========================
+// MOSTRAR CENA
+// ========================
+
+function showScene(){
+
+    if(chapter > 120){
+        endGame();
+        return;
+    }
+
+    let sc = generateScene();
+
+    textBox.innerText = `Capítulo ${chapter}\n\n${sc.text}`;
+
+    choicesBox.innerHTML = "";
+
+    sc.choices.forEach(c=>{
+
+        let btn = document.createElement("button");
+        btn.className = "choice";
+        btn.innerText = c.text;
+
+        btn.onclick = ()=>{
+
+            affinity += c.a;
+            boldness += c.b;
+            mental += c.m;
+            chaos += c.c;
+            jealousy += c.j;
+
+            limitStatus();
+
+            chapter++;
+
+            updateStatus();
+            showScene();
+
+        };
+
+        choicesBox.appendChild(btn);
+
+    });
+
+}
+
+// ========================
+// LIMITES
+// ========================
+
+function limitStatus(){
+
+    affinity = Math.max(0, affinity);
+    boldness = Math.max(0, boldness);
+    mental = Math.max(0, mental);
+    chaos = Math.max(0, chaos);
+    jealousy = Math.max(0, jealousy);
+
+}
+
+// ========================
+// FINAIS
+// ========================
+
+function endGame(){
+
+    let ending = "";
+
+    if(mental <= 0){
+
+        ending = "Luna se afundou na própria dor. Você não conseguiu ajudá-la.\n\nFinal: Silêncio";
+
+    }
+
+    else if(affinity < 10){
+
+        ending = "Vocês se afastaram aos poucos.\n\nFinal: Distância";
+
+    }
+
+    else if(chaos > 18){
+
+        ending = "O relacionamento virou destruição emocional.\n\nFinal: Caos";
+
+    }
+
+    else if(jealousy > 15){
+
+        ending = "Ciúmes destruiu tudo.\n\nFinal: Ruptura";
+
+    }
+
+    else if(boldness > 15 && affinity > 20){
+
+        ending = "Entre desejo, carinho e cumplicidade, vocês se tornaram inseparáveis.\n\nFinal: Paixão";
+
+    }
+
+    else if(affinity > 30 && mental > 10){
+
+        ending = "Vocês superaram traumas juntos e construíram um amor real.\n\nFinal: Amor Verdadeiro";
+
+    }
+
+    else{
+
+        ending = "A história continua, cheia de desafios.\n\nFinal: Em Construção";
+
+    }
+
+    textBox.innerText = ending;
+
+    choicesBox.innerHTML = `
+    <button class="choice" onclick="restart()">Recomeçar</button>
+    `;
+
+}
+
+// ========================
+// SAVE / LOAD
+// ========================
+
+function saveGame(){
+
+    const data = {
+        affinity,
+        boldness,
+        mental,
+        chaos,
+        jealousy,
+        chapter
+    };
+
+    localStorage.setItem("lunaSave", JSON.stringify(data));
+
+    alert("Jogo salvo!");
+
+}
+
+function loadGame(){
+
+    let data = localStorage.getItem("lunaSave");
+
+    if(!data){
+        alert("Nenhum save encontrado");
+        return;
+    }
+
+    data = JSON.parse(data);
+
+    affinity = data.affinity;
+    boldness = data.boldness;
+    mental = data.mental;
+    chaos = data.chaos;
+    jealousy = data.jealousy;
+    chapter = data.chapter;
+
+    updateStatus();
+    showScene();
+
+}
+
+// ========================
+// RESTART
+// ========================
+
+function restart(){
+
+    affinity = 5;
+    boldness = 2;
+    mental = 6;
+    chaos = 0;
+    jealousy = 0;
+    chapter = 1;
+
+    updateStatus();
+    showScene();
+
+}
+
+// ========================
+// START
+// ========================
+
+updateStatus();
+showScene();
+
+</script>
+
+</body>
+</html>
